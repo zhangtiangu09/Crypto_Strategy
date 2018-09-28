@@ -2,7 +2,7 @@
 # @Author: Sky Zhang
 # @Date:   2018-09-28 18:03:34
 # @Last Modified by:   Sky Zhang
-# @Last Modified time: 2018-09-28 18:03:57
+# @Last Modified time: 2018-09-28 19:08:21
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -68,25 +68,26 @@ class Performance:
 
 
 class PortRet:
-    def __init__(self, price, sig_func):
+    def __init__(self, price, sig_mat=None):
         # price: np.ndarray, price table, T*n, T periods and n assets
         self.price = price
-        self.sig_func = sig_func
+        self.sig_mat = sig_mat
 
-    def _signal_mat(self):
+    def _signal_mat(self, sig_func):
         def f(x):
-            return list(self.sig_func(x))
+            return list(sig_func(x))
         signal = [f[self.price[i, :]] for i in range(self.price.shape[0] - 1)]
         return np.array(signal)
 
     def portfolio_return(self):
-        signal_mat = self._signal_mat()
+        if not self.sig_mat:
+            raise Exception('Use _signal_mat method to generate sig_mat')
         ret_mat = self.price[1:, :] / self.price[:-1, :] - 1
-        return signal_mat @ ret_mat.T
+        return self.sig_mat @ ret_mat.T
 
 
-def backtest(price, sig_func):
-    PR = PortRet(price, sig_func)
+def backtest(price, sig_mat):
+    PR = PortRet(price, sig_mat)
     port_ret = PR.portfolio_return()
     PF = Performance(port_ret)
     return PF
